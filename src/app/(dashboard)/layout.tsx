@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Theme } from "@radix-ui/themes";
 import SideNav from "../ui/SideNav";
 import Header from "../ui/Header";
 
@@ -10,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex bg-background text-text min-h-screen font-sans">
+    <div className="w-full flex bg-background text-text min-h-screen font-sans">
         <SideNav />
 
         <div className="flex-1 flex flex-col ml-68">
