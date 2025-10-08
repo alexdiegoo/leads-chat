@@ -25,28 +25,39 @@ interface Props {
 export default function ChatSection({ contact }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState('');
-  const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const instanceId = 'alex'; // TODO: tornar dinâmico
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      if (!contact) return;
+    if (!contact) return;
 
-      setLoading(true);
+    let interval: NodeJS.Timeout;
+
+    const pollMessages = async () => {
       try {
         const res = await fetch(`/api/messages?instance=${instanceId}&remoteJid=${contact.remoteJid}`);
         const data = await res.json();
-        setMessages(data || []);
+
+        if (Array.isArray(data)) {
+          setMessages((prev) => {
+            const latestPrev = prev[prev.length - 1];
+            const latestNew = data[data.length - 1];
+            if (!latestPrev || !latestNew || latestPrev.id !== latestNew.id) {
+              return data;
+            }
+            return prev;
+          });
+        }
       } catch (err) {
-        console.error('Erro ao buscar mensagens', err);
-      } finally {
-        setLoading(false);
+        console.error('Erro no polling de mensagens:', err);
       }
     };
 
-    fetchMessages();
+    pollMessages(); 
+    interval = setInterval(pollMessages, 5000);
+
+    return () => clearInterval(interval); 
   }, [contact]);
 
   useEffect(() => {
@@ -103,25 +114,18 @@ export default function ChatSection({ contact }: Props) {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50">
-        {loading ? (
-          <p className="text-gray-500">Carregando mensagens...</p>
-        ) : sortedMessages.length === 0 ? (
-          <p className="text-gray-500">Nenhuma mensagem encontrada.</p>
-        ) : (
-          sortedMessages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`w-fit max-w-[70%] px-4 py-2 rounded-lg text-sm shadow ${
-                msg.key.fromMe
-                  ? 'ml-auto bg-green-100 text-right'
-                  : 'bg-white text-left'
-              }`}
-            >
-              {msg.message?.conversation || '[sem conteúdo]'}
-            </div>
-          ))
-        )}
-
+        {sortedMessages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`w-fit max-w-[70%] px-4 py-2 rounded-lg text-sm shadow ${
+              msg.key.fromMe
+                ? 'ml-auto bg-green-100 text-right'
+                : 'bg-white text-left'
+            }`}
+          >
+            {msg.message?.conversation || '[sem conteúdo]'}
+          </div>
+        ))}
         <div ref={bottomRef} />
       </div>
 
@@ -137,7 +141,7 @@ export default function ChatSection({ contact }: Props) {
         <button
           onClick={handleSendMessage}
           disabled={!messageText.trim()}
-          className="bg-primary hover:bg-active text-white px-4 py-2 rounded disabled:opacity-50"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
         >
           Enviar
         </button>
