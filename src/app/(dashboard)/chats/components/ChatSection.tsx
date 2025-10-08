@@ -40,14 +40,14 @@ export default function ChatSection({ contact }: Props) {
         const data = await res.json();
 
         if (Array.isArray(data)) {
-          setMessages((prev) => {
-            const latestPrev = prev[prev.length - 1];
-            const latestNew = data[data.length - 1];
-            if (!latestPrev || !latestNew || latestPrev.id !== latestNew.id) {
-              return data;
-            }
-            return prev;
-          });
+          console.log({ messages: data.length })
+          if (Array.isArray(data)) {
+            setMessages((prev) => {
+              const prevStr = JSON.stringify(prev);
+              const newStr = JSON.stringify(data);
+              return prevStr !== newStr ? data : prev;
+            });
+          }
         }
       } catch (err) {
         console.error('Erro no polling de mensagens:', err);
